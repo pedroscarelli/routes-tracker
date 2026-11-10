@@ -20,7 +20,7 @@ export function NewRouteForm(props: PropsWithChildren) {
       )}
       {state?.success && (
         <div className="p-4 border rounded text-contrast bg-success">
-          Rota criada com sucesso!
+          Route created successfully!
         </div>
       )}
       {props.children}

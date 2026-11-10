@@ -73,4 +73,4 @@ export class RoutesDriverGateway {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-//nest - iniciar pra rota - kafka - golang
+//nest - start the route - kafka - golang

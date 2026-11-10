@@ -22,4 +22,4 @@ import { KafkaModule } from './kafka/kafka.module';
 })
 export class AppModule {}
 
-//container de serviços
+//service container

@@ -9,7 +9,7 @@ export async function getRoutes() {
       tags: ["routes"],
     },
   });
-  //revalidate por demanda
+  //on-demand revalidation
   return response.json();
 }
 
@@ -19,7 +19,7 @@ export async function DriverPage() {
   return (
     <div className="flex flex-1 w-full h-full">
       <div className="w-1/3 p-2 h-full">
-        <h4 className="text-3xl text-contrast mb-2">Inicie uma rota</h4>
+        <h4 className="text-3xl text-contrast mb-2">Start a route</h4>
         <div className="flex flex-col">
           <StartRouteForm>
             <select
@@ -28,7 +28,7 @@ export async function DriverPage() {
               className="mb-2 p-2 border rounded bg-default text-contrast"
             >
               <option key="0" value="">
-                Selecione uma rota
+                Select a route
               </option>
               {routes.map((route: RouteModel) => (
                 <option key={route.id} value={route.id}>
@@ -40,7 +40,7 @@ export async function DriverPage() {
               className="bg-main text-primary p-2 rounded text-xl font-bold"
               style={{ width: "100%" }}
             >
-              Iniciar a viagem
+              Start the trip
             </button>
           </StartRouteForm>
         </div>

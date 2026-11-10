@@ -1,25 +1,25 @@
-# Sistema de rastreamento de veículos
-Projeto desenvolvido durante a semana de irmesão Fullcycle 20
+# Vehicle tracking system
+Project developed during the Full Cycle Immersion 20 week
 
-## Requerimentos
+## Requirements
 
-Chave da API do Google Maps, para isso, é necessário criar uma chave de API no Google Cloud Platform (passo a passo no leia-me do projeto api)
-Docker e Docker compose para executar a aplicação.
+A Google Maps API key. To get one, you need to create an API key on Google Cloud Platform (step by step in the api project's README)
+Docker and Docker Compose to run the application.
 
-## Rodar a aplicação
+## Running the application
 
-Rode todas as aplicações com o comando:
+Run all applications with the command:
 ```bash
 docker compose up -d
 ```
-## Rotas da aplicação:
+## Application routes:
 
-Cadastro de novas rotas: http://localhost:3001/new-route
+Register new routes: http://localhost:3001/new-route
 
-Iniciar uma rota: http://localhost:3001/driver
+Start a route: http://localhost:3001/driver
 
-Admin para visualizar todas as rotas iniciadas: http://localhost:3001/admin
+Admin page to view all started routes: http://localhost:3001/admin
 
-## Referencial teórico:
+## References:
 
-Imersão Fullcycle: https://imersao.fullcycle.com.br/ Projeto: https://github.com/devfullcycle/imersao20/
+Full Cycle Immersion: https://imersao.fullcycle.com.br/ Project: https://github.com/devfullcycle/imersao20/

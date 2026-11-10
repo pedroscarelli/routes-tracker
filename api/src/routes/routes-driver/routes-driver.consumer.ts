@@ -23,7 +23,7 @@ export class RoutesDriverConsumer {
         lng,
       },
     );
-    //muitas chamadas http
+    //many http calls
     //http
     //pub/sub - redis
     //grpc

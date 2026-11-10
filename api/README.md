@@ -1,45 +1,45 @@
-# Imersão Fullcycle 20 - Sistema de rastreamento de veículos
+# Full Cycle Immersion 20 - Vehicle tracking system
 
-## Descrição
+## Description
 
-Repositório do Nest (Backend)
+Nest repository (Backend)
 
-## Requerimentos
+## Requirements
 
-É necessário integrar com Google Maps, para isso, é necessário criar uma chave de API no Google Cloud Platform. Para isso, siga os passos:
+You need to integrate with Google Maps, which requires creating an API key on Google Cloud Platform. To do so, follow these steps:
 
-1. Acesse o [Google Cloud Platform](https://cloud.google.com/).
-2. Crie um novo projeto.
-3. Ative a API do Places e Directions do Google Maps.
-4. Guarde a chave de API gerada.
+1. Go to [Google Cloud Platform](https://cloud.google.com/).
+2. Create a new project.
+3. Enable the Google Maps Places and Directions APIs.
+4. Save the generated API key.
 
-## Rodar a aplicação
+## Running the application
 
-Gere o arquivo `.env` através do comando:
+Generate the `.env` file with the command:
 
 ```
 cp .env.example .env
 ```
 
-Coloque a chave de API gerada no Google Cloud Platform no arquivo `.env`.
+Put the API key generated on Google Cloud Platform in the `.env` file.
 
-Levante os containers do Nest.js e MongoDB:
+Start the Nest.js and MongoDB containers:
 
 ```bash
 docker-compose up -d
 ```
 
-Entre no container do Nest.js e instale as dependências:
+Enter the Nest.js container and install the dependencies:
 
 ```bash
 docker-compose exec nest bash
 npm install
 ```
 
-Rode o servidor:
+Run the server:
 
 ```bash
 npm run start:dev
 ```
 
-As especificações das chamadas HTTP estão no arquivo `api.http`. Você pode usar a extensão `REST Client` do VSCode para fazer as chamadas.
+The HTTP call specifications are in the `api.http` file. You can use the VSCode `REST Client` extension to make the calls.

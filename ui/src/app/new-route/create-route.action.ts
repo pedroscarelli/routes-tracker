@@ -11,7 +11,7 @@ export async function createRouteAction(state: any, formData: FormData) {
     {
       // cache: "force-cache", //default
       // next: {
-      //   revalidate: 1 * 60 * 60 * 24, // 1 dia
+      //   revalidate: 1 * 60 * 60 * 24, // 1 day
       // }
     }
   );

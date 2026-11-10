@@ -51,7 +51,7 @@ export class RoutesDriverService {
     //   lastPoint.end_location.lat === dto.lat &&
     //   lastPoint.end_location.lng === dto.lng
     // ) {
-    //   //se tentar novamente ele vai preenchendo, seria importante resetar ou não permitir tentar novamente
+    //   //if it retries it keeps filling up, it would be important to reset or not allow retrying
     //   await this.kafkaProducer.send({
     //     topic: 'route',
     //     messages: [

@@ -1,49 +1,46 @@
-# Imersão Fullcycle 20 - Sistema de rastreamento de veículos
+# Full Cycle Immersion 20 - Vehicle tracking system
 
-## Descrição
+## Description
 
-Repositório do Golang (front-end da aplicação).
+Next.js repository (application front-end).
 
-## Requerimentos
+## Requirements
 
-É necessário integrar com Google Maps, para isso, é necessário criar uma chave de API no Google Cloud Platform. Para isso, siga os passos:
+You need to integrate with Google Maps, which requires creating an API key on Google Cloud Platform. To do so, follow these steps:
 
-1. Acesse o [Google Cloud Platform](https://cloud.google.com/).
-2. Crie um novo projeto.
-3. Ative a API do Places, Directions e Maps JavaScript do Google Maps.
-4. Guarde a chave de API gerada.
+1. Go to [Google Cloud Platform](https://cloud.google.com/).
+2. Create a new project.
+3. Enable the Google Maps Places, Directions and Maps JavaScript APIs.
+4. Save the generated API key.
 
-## Rodar a aplicação
+## Running the application
 
-Levante o container:
+Start the container:
 
 ```
 docker compose up -d
 ```
 
-Acesse o container do Next.js:
+Access the Next.js container:
 
 ```
 docker compose exec next bash
 ```
 
-Gere o arquivo `.env` através do comando:
+Generate the `.env` file with the command:
 
 ```
 cp .env.example .env
 ```
 
-Instale as dependências:
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-Rode o servidor:
+Run the server:
 
 ```bash
 npm run dev
 ```
-
-
-
