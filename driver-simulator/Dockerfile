@@ -1,4 +1,4 @@
-FROM golang:alpine
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -8,4 +8,10 @@ RUN go mod download
 
 COPY . .
 
-CMD ["tail", "-f", "/dev/null"]
+RUN CGO_ENABLED=0 go build -o /simulator ./cmd/simulator
+
+FROM alpine:3.20
+
+COPY --from=builder /simulator /simulator
+
+CMD ["/simulator"]

@@ -1,6 +1,6 @@
 include:
-  - ../mongodb/docker-compose.yml
-  - ../kafka/docker-compose.yml
+  - ../mongodb/docker-compose.yaml
+  - ../kafka/docker-compose.yaml
 
 services:
 
@@ -18,5 +18,3 @@ services:
     depends_on:
       - mongo
       - kafka
-    volumes:
-      - .:/app
