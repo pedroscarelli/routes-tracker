@@ -1,8 +1,7 @@
 package internal
 
 import (
-	"fmt"
-	"math"
+	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,16 +28,10 @@ func NewRoute(id string, distance int, directions []Directions) Route {
 	}
 }
 
-type RouteService struct {
-	mongo          *mongo.Client
-	FreightService *FreightService
-}
-
-func NewRouteService(mongo *mongo.Client, freightService *FreightService) *RouteService {
-	return &RouteService{
-		mongo:          mongo,
-		FreightService: freightService,
-	}
+// RouteRepository stores the routes the simulator knows about.
+type RouteRepository interface {
+	SaveRoute(ctx context.Context, route Route) error
+	GetRoute(ctx context.Context, id string) (Route, error)
 }
 
 type FreightService struct{}
@@ -47,37 +40,36 @@ func NewFreightService() *FreightService {
 	return &FreightService{}
 }
 
+// Calculate returns 0.15 per distance unit plus a 0.30 base fee.
+// The math is done in cents so the result never loses a cent to float rounding.
 func (fs *FreightService) Calculate(distance int) float64 {
-	return math.Floor((float64(distance)*0.15+0.3)*100) / 100
+	cents := distance*15 + 30
+	return float64(cents) / 100
 }
 
-func (rs *RouteService) CreateRoute(route Route) (Route, error) {
-	freightCost := rs.FreightService.Calculate(route.Distance)
-	route.FreightPrice = freightCost
-	fmt.Printf("Calculated freight cost: %.2f\n", freightCost)
+type MongoRouteRepository struct {
+	collection *mongo.Collection
+}
 
+func NewMongoRouteRepository(client *mongo.Client) *MongoRouteRepository {
+	return &MongoRouteRepository{collection: client.Database("routes").Collection("routes")}
+}
+
+func (r *MongoRouteRepository) SaveRoute(ctx context.Context, route Route) error {
 	update := bson.M{
 		"$set": bson.M{
 			"distance":      route.Distance,
 			"directions":    route.Directions,
-			"freight_price": freightCost,
+			"freight_price": route.FreightPrice,
 		},
 	}
-
-	filter := bson.M{"_id": route.ID}
-
-	// Upsert option to insert if not exists
-	opts := options.Update().SetUpsert(true)
-
-	_, err := rs.mongo.Database("routes").Collection("routes").UpdateOne(nil, filter, update, opts)
-
-	return route, err
+	// upsert, so a repeated RouteCreated event just overwrites the route
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": route.ID}, update, options.Update().SetUpsert(true))
+	return err
 }
 
-func (rs *RouteService) GetRoute(id string) (Route, error) {
+func (r *MongoRouteRepository) GetRoute(ctx context.Context, id string) (Route, error) {
 	var route Route
-	filter := bson.M{"_id": id}
-	err := rs.mongo.Database("routes").Collection("routes").FindOne(nil, filter).Decode(&route)
-	fmt.Printf("Found route: %+v\n", route)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&route)
 	return route, err
 }

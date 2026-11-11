@@ -1,4 +1,4 @@
-module github.com/routes/simulator
+module github.com/pedroscarelli/routes-tracker/driver-simulator
 
 go 1.23.4
 

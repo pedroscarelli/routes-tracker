@@ -2,54 +2,56 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/devfullcycle/imersao20/simulator/internal"
+	"github.com/pedroscarelli/routes-tracker/driver-simulator/internal"
+	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/segmentio/kafka-go"
 )
 
 func main() {
-	mongoURI := getEnv("MONGO_URI", "mongodb://admin:admin@mongo:27017/routes?authSource=admin")
+	mongoURI := getEnv("MONGO_URI", "mongodb://root:root@mongo:27017/routes?authSource=admin&directConnection=true")
 	kafkaBroker := getEnv("KAFKA_BROKER", "kafka:9092")
 	kafkaRouteTopic := getEnv("KAFKA_ROUTE_TOPIC", "route")
 	kafkaFreightTopic := getEnv("KAFKA_FREIGHT_TOPIC", "freight")
 	kafkaSimulationTopic := getEnv("KAFKA_SIMULATION_TOPIC", "simulation")
 	kafkaGroupID := getEnv("KAFKA_GROUP_ID", "route-group")
 
-	mongoConnection, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	mongoConnection, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-
-	freightService := internal.NewFreightService()
-	routeService := internal.NewRouteService(mongoConnection, freightService)
-
-	chDriverMoved := make(chan *internal.DriverMovedEvent)
-	chFreightCalculated := make(chan *internal.FreightCalculatedEvent)
+	defer mongoConnection.Disconnect(context.Background())
 
 	freightWriter := &kafka.Writer{
 		Addr:     kafka.TCP(kafkaBroker),
 		Topic:    kafkaFreightTopic,
 		Balancer: &kafka.LeastBytes{},
 	}
+	defer freightWriter.Close()
+
 	simulationWriter := &kafka.Writer{
 		Addr:     kafka.TCP(kafkaBroker),
 		Topic:    kafkaSimulationTopic,
 		Balancer: &kafka.LeastBytes{},
 	}
+	defer simulationWriter.Close()
 
 	hub := internal.NewEventHub(
-		routeService,
-		mongoConnection,
-		chDriverMoved,
-		chFreightCalculated,
+		internal.NewMongoRouteRepository(mongoConnection),
+		internal.NewFreightService(),
 		freightWriter,
 		simulationWriter,
+		time.Second,
 	)
 
 	routeReader := kafka.NewReader(kafka.ReaderConfig{
@@ -57,21 +59,25 @@ func main() {
 		Topic:   kafkaRouteTopic,
 		GroupID: kafkaGroupID,
 	})
+	defer routeReader.Close()
 
-	fmt.Println("Consuming events from 'route' topic...")
+	log.Printf("Consuming events from '%s' topic...", kafkaRouteTopic)
 
 	for {
-		m, err := routeReader.ReadMessage(context.Background())
+		m, err := routeReader.ReadMessage(ctx)
 		if err != nil {
-			log.Printf("Error reading message: %v\n", err)
+			if errors.Is(err, context.Canceled) {
+				log.Println("Shutting down")
+				return
+			}
+			log.Printf("Error reading message: %v", err)
+			time.Sleep(time.Second)
 			continue
 		}
 
-		go func(msg []byte) {
-			if err := hub.HandleEvent(msg); err != nil {
-				log.Printf("Error handling event: %v\n", err)
-			}
-		}(m.Value)
+		if err := hub.HandleEvent(ctx, m.Value); err != nil {
+			log.Printf("Error handling event: %v", err)
+		}
 	}
 }
 
