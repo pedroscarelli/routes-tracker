@@ -1,4 +1,4 @@
-import * as kafkaLib from '@confluentinc/kafka-javascript';
+import type * as kafkaLib from '@confluentinc/kafka-javascript';
 
 export class KafkaContext {
   constructor(

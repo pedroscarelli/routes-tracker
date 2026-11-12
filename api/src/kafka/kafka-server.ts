@@ -45,14 +45,26 @@ export class KafkaServer extends Server implements CustomTransportStrategy {
           this.logger.error(`No handler for topic ${topic}`);
           return;
         }
+        let value: unknown;
+        try {
+          value = JSON.parse(message.value.toString());
+        } catch {
+          this.logger.error(`Skipping invalid JSON message on topic ${topic}`);
+          return;
+        }
         const kafkaContext = new KafkaContext(
           message,
-          JSON.parse(message.value.toString()),
+          value,
           topic,
           partition,
           this.consumer,
         );
-        await handler(kafkaContext);
+        try {
+          await handler(kafkaContext);
+        } catch (error) {
+          // one bad message must not stop the consumer
+          this.logger.error(`Error handling message on topic ${topic}`, error);
+        }
       },
     });
   }
@@ -61,7 +73,7 @@ export class KafkaServer extends Server implements CustomTransportStrategy {
    * This method is triggered on application shutdown.
    */
   async close() {
-    console.log('Closing Kafka connection');
+    this.logger.log('Closing Kafka connection');
     await this.consumer?.disconnect();
     this.consumer = null;
   }

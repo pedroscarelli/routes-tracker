@@ -16,17 +16,15 @@ export class RoutesDriverConsumer {
       payload.messageValue,
     );
     const { route_id, lat, lng } = payload.messageValue;
+    // The consumer runs in its own process, so it hands the point to the HTTP
+    // process, which owns the WebSocket connections.
+    const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:3000';
     await this.httpService.axiosRef.post(
-      `http://localhost:3000/routes/${route_id}/process-route`,
+      `${apiUrl}/routes/${route_id}/process-route`,
       {
         lat,
         lng,
       },
     );
-    //many http calls
-    //http
-    //pub/sub - redis
-    //grpc
-    //route_id, lat, lng
   }
 }
