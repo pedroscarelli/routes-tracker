@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { isObjectId } from '../../utils/object-id';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RoutesDriverGateway } from './routes-driver.gateway';
-//import { DirectionsResponseData } from '@googlemaps/google-maps-services-js';
 
 @Injectable()
 export class RoutesDriverService {
@@ -11,9 +11,19 @@ export class RoutesDriverService {
   ) {}
 
   async processRoute(dto: { route_id: string; lat: number; lng: number }) {
+    const route = isObjectId(dto.route_id)
+      ? await this.prismaService.route.findUnique({
+          where: { id: dto.route_id },
+          select: { id: true },
+        })
+      : null;
+    if (!route) {
+      throw new NotFoundException(`Route ${dto.route_id} not found`);
+    }
+
     const routeDriver = await this.prismaService.routeDriver.upsert({
       include: {
-        route: true, //eager loading
+        route: true,
       },
       where: { route_id: dto.route_id },
       create: {
@@ -38,33 +48,6 @@ export class RoutesDriverService {
         },
       },
     });
-
-    // const directions: DirectionsResponseData = routeDriver.route
-    //   .directions as any;
-
-    // const lastPoint =
-    //   directions.routes[0].legs[0].steps[
-    //     directions.routes[0].legs[0].steps.length - 1
-    //   ];
-
-    // if (
-    //   lastPoint.end_location.lat === dto.lat &&
-    //   lastPoint.end_location.lng === dto.lng
-    // ) {
-    //   //if it retries it keeps filling up, it would be important to reset or not allow retrying
-    //   await this.kafkaProducer.send({
-    //     topic: 'route',
-    //     messages: [
-    //       {
-    //         value: JSON.stringify({
-    //           event: 'RouteFinished',
-    //           ...routeDriver,
-    //         }),
-    //       },
-    //     ],
-    //   });
-    //   return routeDriver;
-    // }
 
     this.routesGateway.emitNewPoints({
       route_id: dto.route_id,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   DirectionsRequest,
   Client as GoogleMapsClient,
@@ -23,6 +23,12 @@ export class DirectionsService {
     const { data } = await this.googleMapsClient.directions({
       params: requestParams,
     });
+
+    if (!data.routes?.length) {
+      throw new NotFoundException(
+        'No driving route found between these places',
+      );
+    }
 
     return {
       ...data,

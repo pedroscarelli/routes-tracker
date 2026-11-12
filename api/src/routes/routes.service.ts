@@ -1,9 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { isObjectId } from '../utils/object-id';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { DirectionsService } from '../maps/directions/directions.service';
-import * as kafkaLib from '@confluentinc/kafka-javascript';
+import type * as kafkaLib from '@confluentinc/kafka-javascript';
 
 @Injectable()
 export class RoutesService {
@@ -14,7 +16,6 @@ export class RoutesService {
   ) {}
 
   async create(createRouteDto: CreateRouteDto) {
-    console.log(createRouteDto);
     const { available_travel_modes, geocoded_waypoints, routes, request } =
       await this.directionsService.getDirections(
         createRouteDto.source_id,
@@ -81,9 +82,7 @@ export class RoutesService {
   }
 
   async startRoute(id: string) {
-    await this.prismaService.route.findUniqueOrThrow({
-      where: { id },
-    });
+    await this.findOne(id);
 
     await this.kafkaProducer.send({
       topic: 'route',
@@ -102,20 +101,31 @@ export class RoutesService {
     return this.prismaService.route.findMany();
   }
 
-  findOne(id: string) {
-    return this.prismaService.route.findUniqueOrThrow({
-      where: { id },
-    });
+  async findOne(id: string) {
+    // ids are Mongo ObjectIds; anything else can't exist, so don't even ask the database
+    const route = isObjectId(id)
+      ? await this.prismaService.route.findUnique({ where: { id } })
+      : null;
+    if (!route) {
+      throw new NotFoundException(`Route ${id} not found`);
+    }
+    return route;
   }
 
-  update(id: string, updateRouteDto: UpdateRouteDto) {
-    return this.prismaService.route.update({
-      where: { id },
-      data: updateRouteDto,
-    });
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} route`;
+  async update(id: string, updateRouteDto: UpdateRouteDto) {
+    try {
+      return await this.prismaService.route.update({
+        where: { id },
+        data: updateRouteDto,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Route ${id} not found`);
+      }
+      throw error;
+    }
   }
 }
