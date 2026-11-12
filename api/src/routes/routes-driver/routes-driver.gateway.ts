@@ -22,10 +22,8 @@ export class RoutesDriverGateway {
   @SubscribeMessage('client:new-points')
   async handleMessage(client: any, payload: any) {
     const { route_id } = payload;
-    console.log('route_id', route_id);
     const route = await this.routesService.findOne(route_id);
-    // @ts-expect-error - routes has not been defined
-    const { steps } = route.directions.routes[0].legs[0];
+    const { steps } = (route.directions as any).routes[0].legs[0];
     for (const step of steps) {
       const { lat, lng } = step.start_location;
       client.emit(`server:new-points/${route_id}:list`, {
@@ -47,8 +45,8 @@ export class RoutesDriverGateway {
       });
       client.broadcast.emit('server:new-points:list', {
         route_id,
-        lat,
-        lng,
+        lat: lat2,
+        lng: lng2,
       });
       await sleep(2000);
     }
@@ -72,5 +70,3 @@ export class RoutesDriverGateway {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-//nest - start the route - kafka - golang
