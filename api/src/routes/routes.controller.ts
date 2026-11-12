@@ -1,15 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpCode } from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
-import { UpdateRouteDto } from './dto/update-route.dto';
+import { ProcessRouteDto } from './dto/process-route.dto';
 import { RoutesDriverService } from './routes-driver/routes-driver.service';
 
 @Controller('routes')
@@ -25,10 +17,7 @@ export class RoutesController {
   }
 
   @Post(':id/process-route')
-  processRoute(
-    @Param('id') id: string,
-    @Body() payload: { lat: number; lng: number },
-  ) {
+  processRoute(@Param('id') id: string, @Body() payload: ProcessRouteDto) {
     return this.routesDriverService.processRoute({
       route_id: id,
       lat: payload.lat,
@@ -37,6 +26,7 @@ export class RoutesController {
   }
 
   @Post(':id/start')
+  @HttpCode(202)
   startRoute(@Param('id') id: string) {
     return this.routesService.startRoute(id);
   }
@@ -49,15 +39,5 @@ export class RoutesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.routesService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
-    return this.routesService.update(id, updateRouteDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.routesService.remove(+id);
   }
 }
