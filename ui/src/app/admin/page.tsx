@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useMap } from "../../hooks/useMap";
 import { socket } from "../../utils/socket-io";
 
-export function AdminPage() {
+function AdminPage() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const map = useMap(mapContainerRef);
 
@@ -18,7 +18,6 @@ export function AdminPage() {
     socket.on(
       `server:new-points:list`,
       async (data: { route_id: string; lat: number; lng: number }) => {
-        console.log(data);
         if (!map.hasRoute(data.route_id)) {
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_NEXT_API_URL}/routes/${data.route_id}`

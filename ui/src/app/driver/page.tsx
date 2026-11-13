@@ -2,18 +2,21 @@ import { RouteModel } from "../../utils/models";
 import { MapDriver } from "./MapDriver";
 import { StartRouteForm } from "./StartRouteForm";
 
-export async function getRoutes() {
+// rendered per request: the route list comes from the API, which is not available at build time
+export const dynamic = "force-dynamic";
+
+async function getRoutes() {
   const response = await fetch(`${process.env.NEST_API_URL}/routes`, {
     cache: "force-cache",
     next: {
       tags: ["routes"],
     },
   });
-  //on-demand revalidation
+  // cached until a new route is created (see revalidateTag("routes"))
   return response.json();
 }
 
-export async function DriverPage() {
+async function DriverPage() {
   const routes = await getRoutes();
 
   return (
