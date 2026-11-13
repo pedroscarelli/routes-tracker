@@ -1,18 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { PlacesService } from './places.service';
 
 describe('PlacesService', () => {
-  let service: PlacesService;
+  it('searches places by text with the configured key', async () => {
+    const client = {
+      findPlaceFromText: jest
+        .fn()
+        .mockResolvedValue({ data: { candidates: [] } }),
+    };
+    const service = new PlacesService(
+      client as any,
+      { get: () => 'test-key' } as any,
+    );
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [PlacesService],
-    }).compile();
+    const result = await service.findPlaces('main street');
 
-    service = module.get<PlacesService>(PlacesService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(result).toEqual({ candidates: [] });
+    expect(client.findPlaceFromText.mock.calls[0][0].params).toMatchObject({
+      input: 'main street',
+      inputtype: 'textquery',
+      key: 'test-key',
+    });
   });
 });
