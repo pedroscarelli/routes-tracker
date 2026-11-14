@@ -7,13 +7,7 @@ export async function createRouteAction(state: any, formData: FormData) {
   const { sourceId, destinationId } = Object.fromEntries(formData);
 
   const directionsResponse = await fetch(
-    `${process.env.NEST_API_URL}/directions?originId=${sourceId}&destinationId=${destinationId}`,
-    {
-      // cache: "force-cache", //default
-      // next: {
-      //   revalidate: 1 * 60 * 60 * 24, // 1 day
-      // }
-    }
+    `${process.env.NEST_API_URL}/directions?originId=${sourceId}&destinationId=${destinationId}`
   );
 
   if (!directionsResponse.ok) {

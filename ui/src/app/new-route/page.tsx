@@ -1,21 +1,14 @@
 import { MapNewRoute } from "./MapNewRoute";
 import { NewRouteForm } from "./NewRouteForm";
 
-export async function searchDirections(source: string, destination: string) {
-  console.log(source, destination);
+async function searchDirections(source: string, destination: string) {
   const [sourceResponse, destinationResponse] = await Promise.all([
-    fetch(`${process.env.NEST_API_URL}/places?text=${source}`, {
-      // cache: "force-cache", //default
-      // next: {
-      //   revalidate: 1 * 60 * 60 * 24, // 1 day
-      // }
-    }),
-    fetch(`${process.env.NEST_API_URL}/places?text=${destination}`, {
-      // cache: "force-cache", //default
-      // next: {
-      //   revalidate: 1 * 60 * 60 * 24, // 1 day
-      // }
-    }),
+    fetch(
+      `${process.env.NEST_API_URL}/places?text=${encodeURIComponent(source)}`
+    ),
+    fetch(
+      `${process.env.NEST_API_URL}/places?text=${encodeURIComponent(destination)}`
+    ),
   ]);
 
   if (!sourceResponse.ok) {
@@ -33,22 +26,19 @@ export async function searchDirections(source: string, destination: string) {
     destinationResponse.json(),
   ]);
 
-  const placeSourceId = sourceData.candidates[0].place_id;
-  const placeDestinationId = destinationData.candidates[0].place_id;
+  const placeSourceId = sourceData.candidates?.[0]?.place_id;
+  const placeDestinationId = destinationData.candidates?.[0]?.place_id;
+
+  if (!placeSourceId || !placeDestinationId) {
+    return { error: "Origin or destination not found. Try a more specific address." };
+  }
 
   const directionsResponse = await fetch(
-    `${process.env.NEST_API_URL}/directions?originId=${placeSourceId}&destinationId=${placeDestinationId}`,
-    {
-      // cache: "force-cache", //default
-      // next: {
-      //   revalidate: 1 * 60 * 60 * 24, // 1 day
-      // },
-    }
+    `${process.env.NEST_API_URL}/directions?originId=${placeSourceId}&destinationId=${placeDestinationId}`
   );
 
   if (!directionsResponse.ok) {
-    console.error(await directionsResponse.text());
-    throw new Error("Failed to fetch directions");
+    return { error: "No driving route found between these places." };
   }
 
   const directionsData = await directionsResponse.json();
@@ -60,7 +50,7 @@ export async function searchDirections(source: string, destination: string) {
   };
 }
 
-export async function NewRoutePage({
+async function NewRoutePage({
   searchParams,
 }: {
   searchParams: Promise<{ source: string; destination: string }>;
@@ -72,8 +62,11 @@ export async function NewRoutePage({
   let directionsData = null;
   let placeSourceId = null;
   let placeDestinationId = null;
+  let error = null;
 
-  if (result) {
+  if (result && "error" in result) {
+    error = result.error;
+  } else if (result) {
     directionsData = result.directionsData;
     placeSourceId = result.placeSourceId;
     placeDestinationId = result.placeDestinationId;
@@ -123,6 +116,9 @@ export async function NewRoutePage({
             Search
           </button>
         </form>
+        {error && (
+          <p className="mt-4 p-4 border rounded text-contrast">{error}</p>
+        )}
         {directionsData && (
           <div className="mt-4 p-4 border rounded text-contrast">
             <ul>
