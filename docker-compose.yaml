@@ -1,4 +1,72 @@
+# Starts the whole system: MongoDB, Kafka, the Nest API (HTTP + Kafka consumer),
+# the Go driver simulator and the Next.js front-end.
 include:
-  - ./golang-simulator/compose.yaml
-  - ./nestjs-api/docker-compose.yaml
-  - ./next-frontend/docker-compose.yaml
+  - ./mongodb/docker-compose.yaml
+  - ./kafka/docker-compose.yaml
+
+x-nest-environment: &nest-environment
+  DATABASE_URL: mongodb://root:root@mongo:27017/nest?authSource=admin&directConnection=true
+  KAFKA_BROKER: kafka:9092
+  GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:?set GOOGLE_MAPS_API_KEY in .env}
+
+services:
+  nest:
+    build: ./api
+    command: sh -c "npm install && npm run start:dev"
+    volumes:
+      - ./api:/home/node/app
+    ports:
+      - 3000:3000
+    environment: *nest-environment
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka-topic-generator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # Kafka consumer for the freight and simulation topics. It runs from source with
+  # ts-node, so it doesn't fight the HTTP process over the dist folder.
+  nest-consumer:
+    build: ./api
+    command: npx ts-node -r tsconfig-paths/register src/cmd/kafka.cmd.ts
+    volumes:
+      - ./api:/home/node/app
+    environment:
+      <<: *nest-environment
+      API_INTERNAL_URL: http://nest:3000
+    depends_on:
+      nest:
+        condition: service_healthy
+
+  simulator:
+    build: ./driver-simulator
+    environment:
+      MONGO_URI: mongodb://root:root@mongo:27017/routes?authSource=admin&directConnection=true
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      mongo:
+        condition: service_started
+      kafka-topic-generator:
+        condition: service_completed_successfully
+
+  next:
+    build: ./ui
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./ui:/home/node/app
+    ports:
+      - 3001:3000
+    environment:
+      NEST_API_URL: http://nest:3000
+      NEXT_PUBLIC_NEST_API_URL: http://localhost:3000
+      NEXT_PUBLIC_NEXT_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:?set GOOGLE_MAPS_API_KEY in .env}
+    depends_on:
+      nest:
+        condition: service_healthy
