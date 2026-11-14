@@ -24,13 +24,22 @@ export function MapDriver(props: MapDriverProps) {
 
     socket.connect();
 
+    let currentChannel: string | null = null;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = async (event: any) => {
-console.log('aaaaaa');
-      socket.offAny();
+      // stop following the previously selected route
+      if (currentChannel) {
+        socket.off(currentChannel);
+      }
       const routeId = event.target!.value;
+      if (!routeId) {
+        currentChannel = null;
+        return;
+      }
+      currentChannel = `server:new-points/${routeId}:list`;
       socket.on(
-        `server:new-points/${routeId}:list`,
+        currentChannel,
         async (data: { route_id: string; lat: number; lng: number }) => {
           if (!map.hasRoute(data.route_id)) {
             const response = await fetch(
@@ -59,6 +68,9 @@ console.log('aaaaaa');
 
     return () => {
       selectElement.removeEventListener("change", handler);
+      if (currentChannel) {
+        socket.off(currentChannel);
+      }
       socket.disconnect();
     };
   }, [routeIdElementId, map]);
